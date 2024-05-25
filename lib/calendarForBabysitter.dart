@@ -1,8 +1,10 @@
 import 'dart:convert';
 
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart'; // Pour les formats de date
 import 'package:http/http.dart' as http;
@@ -22,11 +24,14 @@ Map<String, dynamic>? baby_sitter = GetStorage().read('babysitter');
 class _CalendrierRendezVousPageState extends State<CalendrierRendezVousPage> {
   CalendarFormat _calendarFormat = CalendarFormat.month;
   DateTime _focusedDay = DateTime.now();
-  DateTime _selectedDay =
-      DateTime.now(); // Initialise _selectedDay à la date actuelle
+  DateTime _selectedDay = DateTime.now();
+  List<dynamic> rendezVousList2 =
+      []; // Initialise _selectedDay à la date actuelle
 
   TimeOfDay _selectedStartTime = TimeOfDay.now();
   TimeOfDay _selectedEndTime = TimeOfDay.now();
+
+  List<Map<String, dynamic>> parentDataList = [];
 
   void _selectTime(BuildContext context, bool isStartTime) async {
     final TimeOfDay? picked = await showTimePicker(
@@ -44,44 +49,107 @@ class _CalendrierRendezVousPageState extends State<CalendrierRendezVousPage> {
     }
   }
 
+  Future<Map<String, dynamic>?> getParentByToken(String token) async {
+    final url = 'http://192.168.1.17:3000/api/parents/$token';
+
+    try {
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        print('Failed to load parent: ${response.statusCode}');
+        return null;
+      }
+    } catch (error) {
+      print('Error fetching parent data: $error');
+      return null;
+    }
+  }
+
+  Future<String?> getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('tokenPR');
+  }
+
+  Future<String?> getParentIdByToken(String token) async {
+    final url = 'http://192.168.1.17:3000/api/parents/$token';
+
+    try {
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data[
+            '_id']; // Assurez-vous que l'ID est bien contenu dans le champ '_id' ou utilisez le nom correct du champ.
+      } else {
+        print('Failed to load parent: ${response.body}');
+        return null;
+      }
+    } catch (error) {
+      print('Error fetching parent data: $error');
+      return null;
+    }
+  }
+
   void _sendRendezVous() async {
     try {
+      final String? babysitterToken = await FirebaseMessaging.instance
+          .getToken(); // Récupérer le token FCM du babysitter
+      final String? parentToken =
+          await getToken(); // Récupérer le token FCM du parent depuis le stockage
+      final String? parentId = await getParentIdByToken(parentToken!);
       print(widget.babysitterName);
-      print(parent!['id']);
-      final String apiUrl =
-          'http://192.168.1.17:3000/api/parents/${parent!['id']}/${widget.babysitterName}/rendezvous';
 
-      final response = await http.post(
-        Uri.parse(apiUrl),
-        headers: <String, String>{
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode(<String, dynamic>{
-          'date': _selectedDay.toIso8601String(), // Envoyer la date
-          'heure_debut':
-              '${_selectedStartTime.hour}:${_selectedStartTime.minute}', // Envoyer l'heure de début au format HH:mm
-          'heure_fin':
-              '${_selectedEndTime.hour}:${_selectedEndTime.minute}', // Envoyer l'heure de fin au format HH:mm
-          'nomParent': parent!['nom'],
-        }),
-      );
+      if (parentDataList.isNotEmpty) {
+        final parentData = parentDataList[0]; // Accéder au premier élément
 
-      if (response.statusCode == 201) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Rendez-vous envoyé avec succès!'),
-            backgroundColor: Colors.green,
-          ),
+        final String apiUrl =
+            'http://192.168.1.17:3000/api/parents/${parentId}/${widget.babysitterName}/rendezvous';
+        print("${widget.babysitterName}  ##########################");
+
+        final response = await http.post(
+          Uri.parse(apiUrl),
+          headers: <String, String>{
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode(<String, dynamic>{
+            'date': _selectedDay.toIso8601String(), // Envoyer la date
+            'heure_debut':
+                '${_selectedStartTime.hour}:${_selectedStartTime.minute}', // Envoyer l'heure de début au format HH:mm
+            'heure_fin':
+                '${_selectedEndTime.hour}:${_selectedEndTime.minute}', // Envoyer l'heure de fin au format HH:mm
+            'nomParent':
+                parentData['nom'], // Utiliser les données de parentData
+          }),
         );
+
+        if (response.statusCode == 201) {
+          await sendNotification(
+              babysitterToken); // Utiliser le token FCM du babysitter
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Rendez-vous envoyé avec succès!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                  'Une erreur s\'est produite lors de l\'envoi du rendez-vous.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          print("${response.body}");
+        }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-                'Une erreur s\'est produite lors de l\'envoi du rendez-vous.'),
+            content: Text('Aucune donnée parent trouvée.'),
             backgroundColor: Colors.red,
           ),
         );
-        print("${response.body}");
       }
     } catch (error) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -92,6 +160,124 @@ class _CalendrierRendezVousPageState extends State<CalendrierRendezVousPage> {
         ),
       );
       print(error);
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchParentData();
+    _fetchRendezVous();
+    sendFCMToken();
+  }
+
+  Future<void> _fetchRendezVous() async {
+    try {
+      final List<dynamic> data =
+          await getRendezVousByBabysitterId(widget.babysitterName);
+      setState(() {
+        rendezVousList2 = data;
+      });
+    } catch (error) {
+      print('Error fetching rendezvous: $error');
+    }
+  }
+
+  Future<List<dynamic>> getRendezVousByBabysitterId(String babysitterId) async {
+    final url =
+        'http://192.168.1.17:3000/api/babysitters/rendezVousId/$babysitterId';
+
+    final response = await http.get(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body) as List<dynamic>;
+    } else {
+      throw Exception('Failed to load rendezvous: ${response.statusCode}');
+    }
+  }
+
+  Future<void> _fetchParentData() async {
+    final String? token = await getToken();
+    if (token != null) {
+      final data = await getParentByToken(token);
+      if (data != null) {
+        setState(() {
+          parentDataList.add(data);
+        });
+      }
+    }
+  }
+
+  Future<void> sendFCMToken() async {
+    try {
+      String? fcmToken = await FirebaseMessaging.instance.getToken();
+      // Définissez l'URL de votre endpoint sur le serveur
+      final url =
+          Uri.parse('http://192.168.1.17:3000/api/babysitters/updateFCMToken');
+
+      // Créez le corps de la requête avec le token et le fcmToken
+      final body =
+          jsonEncode({'id': widget.babysitterName, 'fcmToken': fcmToken});
+
+      // Envoyez une requête POST au serveur avec le corps JSON
+      final response = await http.post(
+        url,
+        headers: <String, String>{
+          'Content-Type': 'application/json',
+        },
+        body: body,
+      );
+
+      // Vérifiez si la requête a réussi
+      if (response.statusCode == 200) {
+        print('FCM token updated successfully.');
+      } else {
+        print('Failed to update FCM token: ${response.body}');
+      }
+    } catch (error) {
+      print('An error occurred while sending FCM token: $error');
+    }
+  }
+
+  Future<void> sendNotification(String? token) async {
+    if (token == null) {
+      print("FCM token is null");
+      return;
+    }
+
+    var headersList = {
+      'Accept': '*/*',
+      'User-Agent': 'Thunder Client (https://www.thunderclient.com)',
+      'Content-Type': 'application/json',
+      'Authorization':
+          'key=AAAAkrZ33uU:APA91bFmD8g0KJw7pwsSCXxq5tbLnh8WCYqsR4-LvwooC1ASL5hSLUkYtGSCJ2U4-IWHNl1YinHkOhZK991jHwQG9JV1VbNAII2LOX-TWa7t2fHA0TpCTnxHaEEHS5rd52ia5GFj8uuL',
+    };
+
+    var url = Uri.parse('https://fcm.googleapis.com/fcm/send');
+
+    var body = {
+      "to": token,
+      "notification": {
+        "title": "Réservation",
+        "body": "merci de recouvrer",
+        "mutable_content": true,
+        "sound": "Tri-tone"
+      }
+    };
+
+    var req = http.Request('POST', url);
+    req.headers.addAll(headersList);
+    req.body = json.encode(body);
+
+    var res = await req.send();
+    final resBody = await res.stream.bytesToString();
+
+    if (res.statusCode >= 200 && res.statusCode < 300) {
+      print(resBody);
+      print(token);
+      print("mriiiiiiiiiiiiiiiiiiiiiigl");
+    } else {
+      print(res.reasonPhrase);
     }
   }
 
@@ -149,6 +335,32 @@ class _CalendrierRendezVousPageState extends State<CalendrierRendezVousPage> {
               child: ElevatedButton(
                 onPressed: () => _sendRendezVous(),
                 child: Text('Envoyer le rendez-vous'),
+              ),
+            ),
+            SizedBox(height: 20),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text(
+                "Le/la babysitter n'est pas disponible pour ces dates.",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+            Divider(),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: DataTable(
+                columns: [
+                  DataColumn(label: Text('Date')),
+                  DataColumn(label: Text('Heure de début')),
+                  DataColumn(label: Text('Heure de fin')),
+                ],
+                rows: rendezVousList2.map((rendezVousItem) {
+                  return DataRow(cells: [
+                    DataCell(Text(rendezVousItem['date'])),
+                    DataCell(Text(rendezVousItem['heure_debut'])),
+                    DataCell(Text(rendezVousItem['heure_fin'])),
+                  ]);
+                }).toList(),
               ),
             ),
           ],

@@ -42,6 +42,7 @@ class BabysitterModel {
   final String description;
   final String accepte;
   final List<RendezVous> rendezVous;
+  final String fcmToken;
 
   BabysitterModel({
     required this.id,
@@ -53,6 +54,7 @@ class BabysitterModel {
     required this.description,
     required this.accepte,
     required this.rendezVous,
+    required this.fcmToken,
   });
 
   factory BabysitterModel.fromJson(Map<String, dynamic> json) {
@@ -69,6 +71,7 @@ class BabysitterModel {
       phone: json['phone'] ?? '',
       description: json['description'] ?? '',
       accepte: json['accepte'] ?? '',
+      fcmToken: json['fcmToken'] ?? "",
       rendezVous: rendezVousList,
     );
   }
@@ -82,6 +85,7 @@ class BabysitterModel {
         "phone": phone,
         "description": description,
         "accepte": accepte,
+        "fcmToken": fcmToken,
         "rendezVous": rendezVous.map((rv) => rv.toJson()).toList(),
       };
 }

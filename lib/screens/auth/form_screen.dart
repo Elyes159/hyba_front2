@@ -1,7 +1,14 @@
+// ignore_for_file: unused_field
+
+import 'dart:io';
+import 'dart:convert'; // Ensure to import this for json.decode
+
 import 'package:babysitter/screens/auth/services/signup_service.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:babysitter/screens/auth/signin_screen.dart';
 import 'package:babysitter/widgets/custom_scaffold.dart';
+import 'package:http/http.dart' as http;
 
 class FormScreen extends StatefulWidget {
   final String type;
@@ -21,6 +28,31 @@ class _FormScreenState extends State<FormScreen> {
   TextEditingController phoneController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
   TextEditingController descriptionController = TextEditingController();
+  final TextEditingController _fileNameController = TextEditingController();
+  File? _selectedFile;
+
+  @override
+  void dispose() {
+    nomontroller.dispose();
+    prenomontroller.dispose();
+    emailontroller.dispose();
+    phoneController.dispose();
+    passwordController.dispose();
+    descriptionController.dispose();
+    _fileNameController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickFile() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles();
+
+    if (result != null) {
+      setState(() {
+        _selectedFile = File(result.files.single.path!);
+        _fileNameController.text = result.files.single.name;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -255,10 +287,25 @@ class _FormScreenState extends State<FormScreen> {
                           ),
                         ),
                       ),
+                      TextFormField(
+                        controller: _fileNameController,
+                        decoration: InputDecoration(labelText: 'File Name'),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter a file name';
+                          }
+                          return null;
+                        },
+                      ),
+                      SizedBox(height: 20),
+                      ElevatedButton(
+                        onPressed: _pickFile,
+                        child: Text('Select File'),
+                      ),
                       const SizedBox(
                         height: 25.0,
                       ),
-                      
+
                       Row(
                         children: [
                           Checkbox(
@@ -300,6 +347,15 @@ class _FormScreenState extends State<FormScreen> {
                                   content: Text('Processing Data'),
                                 ),
                               );
+
+                              print('Nom: ${nomontroller.text}');
+                              print('Prenom: ${prenomontroller.text}');
+                              print('Email: ${emailontroller.text}');
+                              print('Phone: ${phoneController.text}');
+                              print('Password: ${passwordController.text}');
+                              print(
+                                  'Description: ${descriptionController.text}');
+
                               var result =
                                   await SignUpService().signUpBabySitter(
                                 nomontroller.text,
@@ -308,6 +364,7 @@ class _FormScreenState extends State<FormScreen> {
                                 passwordController.text,
                                 phoneController.text,
                                 descriptionController.text,
+                                _selectedFile,
                               );
 
                               if (result == 'success') {
@@ -319,15 +376,14 @@ class _FormScreenState extends State<FormScreen> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (e) => SignInScreen(
-                                      type: widget.type,
-                                    ),
+                                    builder: (e) =>
+                                        SignInScreen(type: widget.type),
                                   ),
                                 );
                               } else {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Error'),
+                                  SnackBar(
+                                    content: Text('Error: $result'),
                                   ),
                                 );
                               }

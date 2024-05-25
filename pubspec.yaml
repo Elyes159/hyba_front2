@@ -38,11 +38,13 @@ dependencies:
   icons_plus: ^5.0.0
   logo: ^1.2.1
   image_picker: ^1.0.8
-  file_picker: ^8.0.0+1
+  file_picker: ^8.0.3
   auto_size_text_field: ^2.2.3
   get_storage: ^2.1.1
   table_calendar: ^3.0.0
   shared_preferences: ^2.2.3
+  firebase_messaging: ^14.9.3
+  firebase_core: ^2.31.1
 
 dev_dependencies:
   flutter_test:

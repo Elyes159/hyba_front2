@@ -218,10 +218,7 @@ class _SignInScreenState extends State<SignInScreen> {
                                     Navigator.pushAndRemoveUntil(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (e) =>
-                                            const ProfileScreenParent(
-                                          type: "parent",
-                                        ),
+                                        builder: (e) => const HomePage(),
                                       ),
                                       (Route<dynamic> route) => false,
                                     );

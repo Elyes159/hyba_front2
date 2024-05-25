@@ -1,4 +1,6 @@
+import 'package:babysitter/firebase_options.dart';
 import 'package:babysitter/screens/onboarding_screen/onboarding_screen.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:babysitter/theme/theme.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -6,6 +8,7 @@ import 'package:intl/date_symbol_data_local.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   initializeDateFormatting().then((_) => runApp(const MyApp()));
+  await Firebase.initializeApp();
 }
 
 class MyApp extends StatelessWidget {

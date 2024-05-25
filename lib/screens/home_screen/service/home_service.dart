@@ -1,6 +1,6 @@
 import 'dart:convert';
+
 import 'package:babysitter/screens/auth/models/babysitter_model.dart';
-import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
 
 class HomeService {
@@ -19,7 +19,6 @@ class HomeService {
         List<BabysitterModel> babysitters = [];
         for (var babysitterData in result) {
           List<RendezVous> rendezVousList = [];
-          // Suppose que babysitterData['rendezVous'] est une liste d'objets rendez-vous
           for (var rendezVousData in babysitterData['rendezVous']) {
             RendezVous rendezVous = RendezVous.fromJson(rendezVousData);
             rendezVousList.add(rendezVous);
@@ -34,6 +33,7 @@ class HomeService {
             phone: babysitterData['phone'] ?? '',
             description: babysitterData['description'] ?? '',
             accepte: babysitterData['accepte'] ?? '',
+            fcmToken: babysitterData["fcmToken"] ?? "",
             rendezVous: rendezVousList,
           );
           babysitters.add(user);
@@ -45,7 +45,7 @@ class HomeService {
       }
     } catch (e) {
       print(e.toString());
-      return []; // Ajout de la clause return pour gérer les erreurs et renvoyer une liste vide
+      return [];
     }
   }
 }

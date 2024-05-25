@@ -1,6 +1,9 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
-import 'package:babysitter/screens/auth/models/babysitter_model.dart';
 import 'package:get_storage/get_storage.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class RendezVousBabySitter extends StatefulWidget {
   final String type;
@@ -12,29 +15,73 @@ class RendezVousBabySitter extends StatefulWidget {
 }
 
 class _RendezVousBabySitterState extends State<RendezVousBabySitter> {
+  List<dynamic> rendezVousList = [];
+
+  getFCMToken() async {
+    String? mytoken = await FirebaseMessaging.instance.getToken();
+    print("houniiiiiii $mytoken");
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchRendezVous();
+    getFCMToken();
+  }
+
+  Future<void> _fetchRendezVous() async {
+    List<dynamic> data = await getRendezVousByBabysitterId();
+    print('Fetched rendezvous: $data'); // Debug print
+    setState(() {
+      rendezVousList = data;
+    });
+  }
+
+  Future<String?> getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('tokenBB');
+  }
+
+  Future<List<dynamic>> getRendezVousByBabysitterId() async {
+    final String? token = await getToken();
+    final url = 'http://192.168.1.17:3000/api/babysitters/rendezVous/$token';
+
+    try {
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        print('Response data: ${response.body}'); // Debug print
+        return json.decode(response.body) as List<dynamic>;
+      } else {
+        print('Failed to load rendezvous: ${response.statusCode}');
+        return [];
+      }
+    } catch (error) {
+      print('Error fetching rendezvous: $error');
+      return [];
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    Map<String, dynamic>? user = GetStorage().read(widget.type);
-
     final List<DataColumn> columns = [
       DataColumn(label: Text('Nom Parent')),
       DataColumn(label: Text('Date')),
       DataColumn(label: Text('Heure de début')),
       DataColumn(label: Text('Heure de fin')),
     ];
-  
 
-    final List<DataRow> rows = (user?['rendezVous'] as List<dynamic>? ?? [])
-        .map<DataRow>((rendezVousItem) {
+    final List<DataRow> rows = rendezVousList.map<DataRow>((rendezVousItem) {
       return DataRow(
         cells: [
-          DataCell(Text(rendezVousItem['nomParent'])),
-          DataCell(Text(rendezVousItem['date'])),
-          DataCell(Text(rendezVousItem['heure_debut'])),
-          DataCell(Text(rendezVousItem['heure_fin'])),
+          DataCell(Text(rendezVousItem['nomParent'] ?? '')),
+          DataCell(Text(rendezVousItem['date'] ?? '')),
+          DataCell(Text(rendezVousItem['heure_debut'] ?? '')),
+          DataCell(Text(rendezVousItem['heure_fin'] ?? '')),
         ],
       );
     }).toList();
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Rendez-vous du Baby-Sitter'),
