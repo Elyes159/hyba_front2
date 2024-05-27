@@ -7,7 +7,7 @@ class AdminService {
     try {
       var response = await http.get(
         Uri.parse(
-            "http://192.168.1.14:3000/api/babysitters/demandes/acceptees"),
+            "http://192.168.1.17:3000/api/babysitters/demandes/en-attente"),
         headers: {
           "Content-Type": "application/json",
         },
@@ -34,7 +34,7 @@ class AdminService {
     try {
       var response = await http.get(
         Uri.parse(
-            "http://192.168.1.14:3000/api/babysitters/demandes/acceptees"),
+            "http://192.168.1.17:3000/api/babysitters/demandes/acceptees"),
         headers: {
           "Content-Type": "application/json",
         },
@@ -54,7 +54,7 @@ class AdminService {
   Future<String> refuseDemandes() async {
     try {
       var response = await http.get(
-        Uri.parse("http://192.168.1.14:3000/api/babysitters/demandes/"),
+        Uri.parse("http://192.168.1.17:3000/api/babysitters/demandes/refusees"),
         headers: {
           "Content-Type": "application/json",
         },

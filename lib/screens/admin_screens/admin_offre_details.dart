@@ -1,11 +1,80 @@
-import 'package:babysitter/screens/admin_screens/services/admin_service.dart';
-import 'package:babysitter/screens/auth/models/babysitter_model.dart';
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:babysitter/screens/admin_screens/services/admin_service.dart';
+import 'package:babysitter/screens/auth/models/babysitter_model.dart';
+import 'package:flutter_pdfview/flutter_pdfview.dart';
+import 'package:path_provider/path_provider.dart';
 
-class AdminOffreDetailsPage extends StatelessWidget {
+class AdminOffreDetailsPage extends StatefulWidget {
   final BabysitterModel user;
-  const AdminOffreDetailsPage({super.key, required this.user});
+  const AdminOffreDetailsPage({Key? key, required this.user}) : super(key: key);
+
+  @override
+  _AdminOffreDetailsPageState createState() => _AdminOffreDetailsPageState();
+}
+
+class _AdminOffreDetailsPageState extends State<AdminOffreDetailsPage> {
+  String? _pdfPath;
+
+  Future<void> acceptBabysitter(String id) async {
+    final url = Uri.parse(
+        'http://192.168.1.17:3000/api/babysitters/accepte-babysitter/$id');
+
+    try {
+      final response = await http.put(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        print('Babysitter accepted successfully.');
+      } else if (response.statusCode == 404) {
+        print('Babysitter not found.');
+      } else {
+        print('Failed to accept babysitter: ${response.reasonPhrase}');
+      }
+    } catch (e) {
+      print('An error occurred: $e');
+    }
+  }
+
+  Future<void> _loadCV() async {
+    final response = await http.post(
+      Uri.parse('http://192.168.1.17:3000/api/babysitters/getCVById'),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'id': widget.user.id}),
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      final base64PDF = data['cv'];
+
+      final bytes = base64Decode(base64PDF);
+      final dir = await getApplicationDocumentsDirectory();
+      final file = File('${dir.path}/cv.pdf');
+      await file.writeAsBytes(bytes);
+
+      setState(() {
+        _pdfPath = file.path;
+      });
+    } else {
+      print(
+          'Failed to load CV for babysitter ${widget.user.id}: ${response.statusCode}');
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCV();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,8 +94,7 @@ class AdminOffreDetailsPage extends StatelessWidget {
                       CupertinoIcons.arrow_left,
                     ),
                     onPressed: () {
-                      Navigator.of(context)
-                          .pop(); // Typically used to go back to the previous screen
+                      Navigator.of(context).pop();
                     },
                   ),
                   IconButton(
@@ -34,7 +102,6 @@ class AdminOffreDetailsPage extends StatelessWidget {
                       CupertinoIcons.bell,
                     ),
                     onPressed: () {
-                      // Add the desired functionality for the notification bell here, e.g., open notifications view
                       print("Notifications icon tapped!");
                     },
                   )
@@ -46,7 +113,6 @@ class AdminOffreDetailsPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // SizedBox(height: 5),
                   Row(
                     children: [
                       const CircleAvatar(
@@ -59,7 +125,7 @@ class AdminOffreDetailsPage extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '${user.nom} ${user.prenom}',
+                            '${widget.user.nom} ${widget.user.prenom}',
                             style: const TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
@@ -75,7 +141,7 @@ class AdminOffreDetailsPage extends StatelessWidget {
                               ),
                               const SizedBox(width: 3),
                               Text(
-                                user.phone,
+                                widget.user.phone,
                                 style: TextStyle(
                                   fontSize: 16,
                                   color: Colors.grey[600],
@@ -93,27 +159,12 @@ class AdminOffreDetailsPage extends StatelessWidget {
                     children: [
                       const SizedBox(height: 15),
                       Text(
-                        user.email,
+                        widget.user.email,
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      // SizedBox(height: 3),
-                      //   Container(
-                      //   padding:
-                      //    EdgeInsets.symmetric(vertical: 3, horizontal: 8),
-                      //  decoration: BoxDecoration(
-                      //   color: Colors.grey[300],
-                      //  borderRadius: BorderRadius.circular(8),
-                      // ),
-                      // child: Text(
-                      // 'Experience: 5 years',
-                      //  style: TextStyle(
-                      //     fontSize: 14,
-                      //    ),
-                      //   ),
-                      // ),
                     ],
                   ),
                 ],
@@ -132,8 +183,7 @@ class AdminOffreDetailsPage extends StatelessWidget {
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(30.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  child: ListView(
                     children: [
                       const Text(
                         'Détails',
@@ -144,13 +194,29 @@ class AdminOffreDetailsPage extends StatelessWidget {
                       ),
                       const SizedBox(height: 10),
                       Text(
-                        user.description,
+                        widget.user.description,
                         style: TextStyle(
                           fontSize: 16,
                           color: Colors.grey[800],
                         ),
                       ),
                       const SizedBox(height: 20),
+                      if (_pdfPath != null) ...[
+                        const Text(
+                          'CV:',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Container(
+                          height: 400, // Set the desired height here
+                          child: PDFView(
+                            filePath: _pdfPath!,
+                          ),
+                        ),
+                      ],
                       const Spacer(),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -158,11 +224,11 @@ class AdminOffreDetailsPage extends StatelessWidget {
                           ElevatedButton(
                             onPressed: () async {
                               await AdminService().accepetDemandes();
+                              await acceptBabysitter(widget.user.id);
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green, // Set button color
-                              minimumSize:
-                                  const Size(150, 10), // Set button size
+                              backgroundColor: Colors.green,
+                              minimumSize: const Size(150, 50),
                             ),
                             child: const Text(
                               'Accept',
@@ -170,17 +236,14 @@ class AdminOffreDetailsPage extends StatelessWidget {
                                   fontWeight: FontWeight.bold, fontSize: 16),
                             ),
                           ),
-                          const SizedBox(
-                              width: 20), // Add spacing between buttons
+                          const SizedBox(width: 20),
                           ElevatedButton(
                             onPressed: () async {
-                              // Add your reject logic here
                               await AdminService().refuseDemandes();
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red, // Set button color
-                              minimumSize:
-                                  const Size(150, 10), // Set button size
+                              backgroundColor: Colors.red,
+                              minimumSize: const Size(150, 50),
                             ),
                             child: const Text(
                               'Reject',
