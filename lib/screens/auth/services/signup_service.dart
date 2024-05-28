@@ -52,6 +52,16 @@ class SignUpService {
     }
   }
 
+  Future<http.Response> sendNotification(String nom, String prenom) async {
+    var uri = Uri.parse('http://192.168.1.17:3000/api/admin/addNotif');
+    var response = await http.post(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'nom': nom, 'prenom': prenom}),
+    );
+    return response;
+  }
+
   Future<String> signUpParent(
     String nom,
     String prenom,

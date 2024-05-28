@@ -373,6 +373,10 @@ class _FormScreenState extends State<FormScreen> {
                                     content: Text('Success'),
                                   ),
                                 );
+                                SignUpService().sendNotification(
+                                  nomontroller.text,
+                                  prenomontroller.text,
+                                );
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(

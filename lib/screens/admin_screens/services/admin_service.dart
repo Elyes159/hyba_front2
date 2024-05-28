@@ -70,4 +70,19 @@ class AdminService {
       return 'error';
     }
   }
+
+  Future<List<Map<String, dynamic>>> getNotifications() async {
+    var uri = Uri.parse('http://192.168.1.17:3000/api/admin/getNotif');
+    var response =
+        await http.get(uri, headers: {'Content-Type': 'application/json'});
+
+    if (response.statusCode == 200) {
+      List<dynamic> notifications = jsonDecode(response.body);
+      return notifications
+          .map((notification) => notification as Map<String, dynamic>)
+          .toList();
+    } else {
+      throw Exception('Failed to load notifications');
+    }
+  }
 }

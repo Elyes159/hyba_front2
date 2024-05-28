@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:babysitter/screens/admin_screens/admin_offre_details.dart';
+import 'package:babysitter/screens/admin_screens/notifications.dart';
 import 'package:babysitter/screens/admin_screens/services/admin_service.dart';
 import 'package:babysitter/screens/auth/models/babysitter_model.dart';
 import 'package:babysitter/screens/home_screen/service/home_service.dart';
@@ -107,7 +108,13 @@ class _AdminHomePageState extends State<AdminHomePage> {
                           icon: Icon(
                             CupertinoIcons.bell,
                           ),
-                          onPressed: () {},
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => Notifications()),
+                            );
+                          },
                         ),
                       ),
                     ],
@@ -229,7 +236,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                                                 backgroundImage: _profilePicBase64List
                                                             .isNotEmpty &&
                                                         _profilePicBase64List[
-                                                                index] !=
+                                                                0] !=
                                                             null
                                                     ? MemoryImage(base64Decode(
                                                             _profilePicBase64List[
@@ -240,7 +247,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                                                 child: _profilePicBase64List
                                                             .isEmpty ||
                                                         _profilePicBase64List[
-                                                                index] ==
+                                                                0] ==
                                                             null
                                                     ? const Icon(Icons.person)
                                                     : null,
