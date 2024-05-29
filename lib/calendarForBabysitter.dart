@@ -49,6 +49,11 @@ class _CalendrierRendezVousPageState extends State<CalendrierRendezVousPage> {
     }
   }
 
+  getFCMToken() async {
+    String? mytoken = await FirebaseMessaging.instance.getToken();
+    print("houniiiiiii $mytoken");
+  }
+
   Future<Map<String, dynamic>?> getParentByToken(String token) async {
     final url = 'http://192.168.1.17:3000/api/parents/$token';
 
@@ -107,7 +112,7 @@ class _CalendrierRendezVousPageState extends State<CalendrierRendezVousPage> {
         final String apiUrl =
             'http://192.168.1.17:3000/api/parents/${parentId}/${widget.babysitterName}/rendezvous';
         print("${widget.babysitterName}  ##########################");
-
+        String? fcm_token = await FirebaseMessaging.instance.getToken();
         final response = await http.post(
           Uri.parse(apiUrl),
           headers: <String, String>{
@@ -119,14 +124,14 @@ class _CalendrierRendezVousPageState extends State<CalendrierRendezVousPage> {
                 '${_selectedStartTime.hour}:${_selectedStartTime.minute}', // Envoyer l'heure de début au format HH:mm
             'heure_fin':
                 '${_selectedEndTime.hour}:${_selectedEndTime.minute}', // Envoyer l'heure de fin au format HH:mm
-            'nomParent':
-                parentData['nom'], // Utiliser les données de parentData
+            'nomParent': parentData['nom'],
+            'fcm_token': fcm_token // Utiliser les données de parentData
           }),
         );
 
         if (response.statusCode == 201) {
-          await sendNotification(
-              babysitterToken); // Utiliser le token FCM du babysitter
+          // await sendNotification(
+          //     babysitterToken); // Utiliser le token FCM du babysitter
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Rendez-vous envoyé avec succès!'),
@@ -169,6 +174,49 @@ class _CalendrierRendezVousPageState extends State<CalendrierRendezVousPage> {
     _fetchParentData();
     _fetchRendezVous();
     sendFCMToken();
+
+    getFCMToken();
+  }
+
+  Future<void> addRendezVous() async {
+    final String? parentToken =
+        await getToken(); // Récupérer le token FCM du parent depuis le stockage
+    final String? parentId = await getParentIdByToken(parentToken!);
+    final url = Uri.parse(
+        'http://192.168.1.17:3000/api/parents/$parentId/${widget.babysitterName}/rendezvous');
+    final parentData = parentDataList[0]; // Accéder au premier élément
+    String? fcmToken = await sendFCMToken();
+    if (fcmToken != null) {
+      // FCM token récupéré avec succès
+    } else {
+      // Échec de la récupération du FCM token
+    }
+
+    try {
+      final response = await http.post(
+        url,
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(<String, String>{
+          'date': _selectedDay.toIso8601String(), // Envoyer la date
+          'heure_debut':
+              '${_selectedStartTime.hour}:${_selectedStartTime.minute}', // Envoyer l'heure de début au format HH:mm
+          'heure_fin':
+              '${_selectedEndTime.hour}:${_selectedEndTime.minute}', // Envoyer l'heure de fin au format HH:mm
+          'nomParent': parentData['nom'],
+          'fcm_token': fcmToken!,
+        }),
+      );
+
+      if (response.statusCode == 201) {
+        print('Rendez-vous ajouté avec succès');
+      } else {
+        print('Erreur lors de l\'ajout du rendez-vous: ${response.body}');
+      }
+    } catch (error) {
+      print('Erreur lors de l\'ajout du rendez-vous: $error');
+    }
   }
 
   Future<void> _fetchRendezVous() async {
@@ -208,7 +256,7 @@ class _CalendrierRendezVousPageState extends State<CalendrierRendezVousPage> {
     }
   }
 
-  Future<void> sendFCMToken() async {
+  Future<String?> sendFCMToken() async {
     try {
       String? fcmToken = await FirebaseMessaging.instance.getToken();
       // Définissez l'URL de votre endpoint sur le serveur
@@ -231,11 +279,14 @@ class _CalendrierRendezVousPageState extends State<CalendrierRendezVousPage> {
       // Vérifiez si la requête a réussi
       if (response.statusCode == 200) {
         print('FCM token updated successfully.');
+        return fcmToken; // Retournez le FCM token
       } else {
         print('Failed to update FCM token: ${response.body}');
+        return null; // Retournez null en cas d'échec
       }
     } catch (error) {
       print('An error occurred while sending FCM token: $error');
+      return null; // Retournez null en cas d'erreur
     }
   }
 
@@ -278,6 +329,22 @@ class _CalendrierRendezVousPageState extends State<CalendrierRendezVousPage> {
       print("mriiiiiiiiiiiiiiiiiiiiiigl");
     } else {
       print(res.reasonPhrase);
+    }
+  }
+
+  String message = "";
+
+  @override
+  void didChangeDependencies() {
+    // TODO: implement didChangeDependencies
+    super.didChangeDependencies();
+    final arguments = ModalRoute.of(context)!.settings.arguments;
+
+    if (arguments != null) {
+      Map? pushArguments = arguments as Map;
+      setState(() {
+        message = pushArguments["message"];
+      });
     }
   }
 
@@ -333,7 +400,7 @@ class _CalendrierRendezVousPageState extends State<CalendrierRendezVousPage> {
             SizedBox(height: 20),
             Center(
               child: ElevatedButton(
-                onPressed: () => _sendRendezVous(),
+                onPressed: () => addRendezVous(),
                 child: Text('Envoyer le rendez-vous'),
               ),
             ),
