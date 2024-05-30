@@ -1,5 +1,6 @@
 import 'package:babysitter/screens/auth/signin_screen.dart';
 import 'package:babysitter/screens/profile/rendezVousBabySitter.dart';
+import 'package:babysitter/screens/profile/update_profiile_bb.dart';
 import 'package:babysitter/screens/profile/update_profile_screen.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -54,7 +55,9 @@ class ProfileScreen extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (e) => UptadeProfileScreen(),
+                    builder: (e) => UpdateProfiileBb(
+                      type: 'baby-sitter',
+                    ),
                   ),
                 );
               },
