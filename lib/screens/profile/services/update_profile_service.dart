@@ -18,7 +18,6 @@ class UptadeProfile {
     String nbEnfants,
   ) async {
     try {
-      String id = user!['id'];
       final requestBodyJson = json.encode({
         "nom": nom,
         "prenom": prenom,

@@ -1,14 +1,12 @@
 // ignore_for_file: unused_field
 
 import 'dart:io';
-import 'dart:convert'; // Ensure to import this for json.decode
 
 import 'package:babysitter/screens/auth/services/signup_service.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:babysitter/screens/auth/signin_screen.dart';
 import 'package:babysitter/widgets/custom_scaffold.dart';
-import 'package:http/http.dart' as http;
 
 class FormScreen extends StatefulWidget {
   final String type;

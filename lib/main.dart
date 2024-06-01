@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:babysitter/calendarForBabysitter.dart';
-import 'package:babysitter/firebase_options.dart';
 import 'package:babysitter/screens/onboarding_screen/onboarding_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';

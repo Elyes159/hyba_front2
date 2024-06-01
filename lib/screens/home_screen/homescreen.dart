@@ -1,11 +1,9 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:babysitter/screens/auth/models/babysitter_model.dart';
 import 'package:babysitter/screens/home_screen/service/home_service.dart';
 import 'package:babysitter/screens/profile/profile_screen.dart';
 import 'package:babysitter/calendarForBabysitter.dart';
-import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
 
 class HomePage extends StatefulWidget {

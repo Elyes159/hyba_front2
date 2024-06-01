@@ -1,6 +1,4 @@
-import 'dart:convert';
-import 'package:babysitter/screens/auth/models/babysitter_model.dart';
-import 'package:http/http.dart' as http;
+
 
 class RendezVous {
   final String nomParent;

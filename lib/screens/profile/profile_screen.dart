@@ -1,7 +1,6 @@
 import 'package:babysitter/screens/auth/signin_screen.dart';
 import 'package:babysitter/screens/profile/rendezVousBabySitter.dart';
 import 'package:babysitter/screens/profile/update_profiile_bb.dart';
-import 'package:babysitter/screens/profile/update_profile_screen.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get_storage/get_storage.dart';
