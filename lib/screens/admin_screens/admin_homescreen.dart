@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:babysitter/screens/admin_screens/admin_offre_details.dart';
+import 'package:babysitter/screens/admin_screens/all-users.dart';
 import 'package:babysitter/screens/admin_screens/notifications.dart';
 import 'package:babysitter/screens/admin_screens/services/admin_service.dart';
 import 'package:babysitter/screens/auth/models/babysitter_model.dart';
@@ -168,13 +169,28 @@ class _AdminHomePageState extends State<AdminHomePage> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(
+                              const Text(
                                 'Baby-sitters requests :',
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 22,
                                 ),
                               ),
+                              InkWell(
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) =>
+                                              BabysitterPage()),
+                                    );
+                                  },
+                                  child: const Text(
+                                    "View all users",
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        color: Colors.purple),
+                                  ))
                             ],
                           ),
                           SizedBox(

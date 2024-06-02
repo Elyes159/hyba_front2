@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:babysitter/screens/auth/models/babysitter_model.dart';
+import 'package:babysitter/screens/auth/models/parent_model.dart';
 import 'package:http/http.dart' as http;
 
 class AdminService {
@@ -85,4 +86,42 @@ class AdminService {
       throw Exception('Failed to load notifications');
     }
   }
+
+  final String apiUrl =
+      'http://192.168.1.17:3000/api/babysitters/babysitters-all';
+
+  Future<List<BabysitterModel>> fetchBabysitters() async {
+    final response = await http.get(Uri.parse(apiUrl));
+
+    if (response.statusCode == 200) {
+      List<dynamic> body = json.decode(response.body);
+      List<BabysitterModel> babysitters = body
+          .map(
+            (dynamic item) => BabysitterModel.fromJson(item),
+          )
+          .toList();
+      return babysitters;
+    } else {
+      print(response.body);
+      throw Exception('Failed to load babysitters');
+    }
+  }
+
+  Future<List<ParentModel>> fetchParents() async {
+    final response =
+        await http.get(Uri.parse("http://192.168.1.17:3000/api/parents/"));
+
+    if (response.statusCode == 200) {
+      List<dynamic> body = json.decode(response.body);
+      List<ParentModel> parents = body
+          .map(
+            (dynamic item) => ParentModel.fromJson(item),
+          )
+          .toList();
+      return parents;
+    } else {
+      throw Exception('Failed to load parents');
+    }
+  }
+  
 }

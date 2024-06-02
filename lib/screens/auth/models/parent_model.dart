@@ -5,7 +5,7 @@ class ParentModel {
   final String email;
   final String password;
   final String phone;
-  final String nbEnfants;
+  final int nbEnfants;
 
   ParentModel({
     required this.id,

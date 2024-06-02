@@ -1,3 +1,4 @@
+import 'package:babysitter/localisation_bbsitter/localisation_baby_sitter.dart';
 import 'package:babysitter/screens/auth/signin_screen.dart';
 import 'package:babysitter/screens/profile/rendezVousBabySitter.dart';
 import 'package:babysitter/screens/profile/update_profiile_bb.dart';
@@ -57,6 +58,18 @@ class ProfileScreen extends StatelessWidget {
                     builder: (e) => UpdateProfiileBb(
                       type: 'baby-sitter',
                     ),
+                  ),
+                );
+              },
+            ),
+            ProfileMenu(
+              text: "My localisation",
+              icon: CupertinoIcons.profile_circled,
+              press: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (e) => LocalisationBBsitter(),
                   ),
                 );
               },
